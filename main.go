@@ -64,7 +64,7 @@ func (l *CompliancePlugin) Eval(request *proto.EvalRequest, apiHelper runner.Api
 	}
 
 	dataFetcher := internal.NewDataFetcher(l.logger, l.config)
-	data, err := dataFetcher.FetchData()
+	certs, err := dataFetcher.FetchData(ctx)
 	if err != nil {
 		return &proto.EvalResponse{
 			Status: proto.ExecutionStatus_FAILURE,
@@ -72,6 +72,7 @@ func (l *CompliancePlugin) Eval(request *proto.EvalRequest, apiHelper runner.Api
 	}
 
 	policyEvaluator := internal.NewPolicyEvaluator(ctx, l.logger, activities)
+	data := map[string]interface{}{"certificates": certs}
 
 	evidences, err := policyEvaluator.Eval(ctx, data, request.PolicyPaths, l.policyData, l.config.PolicyLabels)
 	if err != nil {
