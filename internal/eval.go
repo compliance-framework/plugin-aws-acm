@@ -35,9 +35,8 @@ func (pe *PolicyEvaluator) Eval(ctx context.Context, input map[string]interface{
 			MergeMaps(labels, map[string]string{
 				"provider": "aws",
 				"type":     "acm-certificate",
-				// _-prefixed labels are internal context visible to the policy
-				// engine but hidden from the UI and excluded from evidence UUID
-				// generation.
+				// _-prefixed labels are hidden from the UI but ARE included in
+				// evidence UUID generation — changing them changes the UUID.
 			}),
 			[]*proto.Subject{},
 			[]*proto.Component{},

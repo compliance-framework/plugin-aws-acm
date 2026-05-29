@@ -80,9 +80,9 @@ func TestParseConfig_InvalidPolicyLabels(t *testing.T) {
 }
 
 // TestEvalLabelsStable verifies that the base labels produced by the policy
-// evaluator are stable across calls. The evidence UUID algorithm derives a
-// deterministic UUID from the label set, so any change to these keys would
-// silently break evidence continuity in the UI.
+// evaluator are stable across calls. SeededUUID (api/sdk/uuid.go) derives a
+// deterministic UUID from ALL labels including _-prefixed ones, so any change
+// to these keys would silently break evidence continuity in the UI.
 func TestEvalLabelsStable(t *testing.T) {
 	baseLabels := MergeMaps(map[string]string{}, map[string]string{
 		"provider": "aws",
