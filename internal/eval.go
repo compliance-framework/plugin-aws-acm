@@ -36,7 +36,7 @@ func (pe *PolicyEvaluator) Eval(ctx context.Context, input map[string]interface{
 				"provider": "aws",
 				"type":     "acm-certificate",
 				// _-prefixed labels are internal context visible to the policy
-				// engine but hidden from the UI and excluded from stream UUID
+				// engine but hidden from the UI and excluded from evidence UUID
 				// generation.
 			}),
 			[]*proto.Subject{},
