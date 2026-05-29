@@ -7,19 +7,32 @@ import (
 )
 
 type PluginConfig struct {
-	Region        string
-	AssumeRoleARN string
-	PolicyLabels  map[string]string
+	Regions      []string
+	Accounts     []string
+	PolicyLabels map[string]string
 }
 
 func ParseConfig(raw map[string]string) (*PluginConfig, error) {
 	config := &PluginConfig{}
 
-	config.Region = strings.TrimSpace(raw["region"])
-	if config.Region == "" {
-		return nil, fmt.Errorf("config key 'region' is required")
+	if v := strings.TrimSpace(raw["regions"]); v != "" {
+		for _, r := range strings.Split(v, ",") {
+			if r := strings.TrimSpace(r); r != "" {
+				config.Regions = append(config.Regions, r)
+			}
+		}
 	}
-	config.AssumeRoleARN = strings.TrimSpace(raw["assume_role_arn"])
+	if len(config.Regions) == 0 {
+		return nil, fmt.Errorf("config key 'regions' is required")
+	}
+
+	if v := strings.TrimSpace(raw["accounts"]); v != "" {
+		for _, a := range strings.Split(v, ",") {
+			if a := strings.TrimSpace(a); a != "" {
+				config.Accounts = append(config.Accounts, a)
+			}
+		}
+	}
 
 	if v := strings.TrimSpace(raw["policy_labels"]); v != "" {
 		if err := json.Unmarshal([]byte(v), &config.PolicyLabels); err != nil {

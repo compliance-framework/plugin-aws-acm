@@ -2,25 +2,17 @@
 
 A CCF compliance plugin for AWS Certificate Manager (ACM). Fetches certificate data from ACM and evaluates OPA Rego policies to produce Evidence for the CCF API.
 
-## What it checks
-
-| Check | SOC2 Controls | Description |
-|-------|--------------|-------------|
-| Certificate expiry | CC7.1, CC7.2 | Certificates expiring within threshold days |
-| Certificate transparency | CC6.1 | CT logging enabled |
-| Key algorithm | CC6.1 | RSA 2048+ or ECDSA P-256+ |
-| Wildcard certificates | CC6.1, CC6.7 | Wildcard certs flagged |
-| Auto-renewal | A1.2 | Auto-renewal enabled for managed certs |
-| Domain validation | CC6.1 | DNS validation preferred over email |
-| In-use certificates | CC9.1 | Certificates attached to at least one resource |
+What the plugin checks is determined entirely by the policy bundles configured in the agent. The plugin itself is policy-agnostic — it fetches ACM certificate data and makes it available to whatever policies are loaded.
 
 ## Configuration
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
-| `region` | string | required | AWS region |
-| `assume_role_arn` | string | "" | IAM role ARN to assume (optional) |
+| `regions` | string | required | Comma-separated list of AWS regions, e.g. `us-east-1,eu-west-1` |
+| `accounts` | string | "" | Comma-separated list of AWS account IDs to evaluate (optional) |
 | `policy_labels` | JSON object | {} | Extra labels added to all Evidence entries |
+
+AWS credentials are resolved from the environment using the standard AWS SDK credential chain (environment variables, shared credentials file, instance profile, etc.).
 
 ## Required IAM permissions
 
