@@ -32,12 +32,7 @@ func (pe *PolicyEvaluator) Eval(ctx context.Context, input map[string]interface{
 	for _, policyPath := range policyPaths {
 		processor := policyManager.NewPolicyProcessor(
 			pe.logger,
-			MergeMaps(labels, map[string]string{
-				"provider": "aws",
-				"type":     "acm-certificate",
-				// _-prefixed labels are hidden from the UI but ARE included in
-				// evidence UUID generation — changing them changes the UUID.
-			}),
+			MergeMaps(labels, certificateBaseLabels()),
 			[]*proto.Subject{},
 			[]*proto.Component{},
 			[]*proto.InventoryItem{},
@@ -54,4 +49,15 @@ func (pe *PolicyEvaluator) Eval(ctx context.Context, input map[string]interface{
 	}
 
 	return evidences, accumulatedErrors
+}
+
+// certificateBaseLabels returns the stable identity labels applied to every
+// ACM certificate evidence entry. SeededUUID (api/sdk/uuid.go) derives the
+// evidence UUID from ALL labels including _-prefixed ones — changing any key
+// here will change the UUID and break evidence continuity in the UI.
+func certificateBaseLabels() map[string]string {
+	return map[string]string{
+		"provider": "aws",
+		"type":     "acm-certificate",
+	}
 }

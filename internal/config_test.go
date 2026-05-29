@@ -79,15 +79,12 @@ func TestParseConfig_InvalidPolicyLabels(t *testing.T) {
 	}
 }
 
-// TestEvalLabelsStable verifies that the base labels produced by the policy
-// evaluator are stable across calls. SeededUUID (api/sdk/uuid.go) derives a
-// deterministic UUID from ALL labels including _-prefixed ones, so any change
+// TestEvalLabelsStable verifies that certificateBaseLabels — the function
+// called by Eval — returns stable values. SeededUUID (api/sdk/uuid.go) derives
+// the evidence UUID from ALL labels including _-prefixed ones, so any change
 // to these keys would silently break evidence continuity in the UI.
 func TestEvalLabelsStable(t *testing.T) {
-	baseLabels := MergeMaps(map[string]string{}, map[string]string{
-		"provider": "aws",
-		"type":     "acm-certificate",
-	})
+	got := certificateBaseLabels()
 
 	want := map[string]string{
 		"provider": "aws",
@@ -95,11 +92,11 @@ func TestEvalLabelsStable(t *testing.T) {
 	}
 
 	for k, v := range want {
-		if baseLabels[k] != v {
-			t.Errorf("label %q: want %q, got %q", k, v, baseLabels[k])
+		if got[k] != v {
+			t.Errorf("label %q: want %q, got %q", k, v, got[k])
 		}
 	}
-	if len(baseLabels) != len(want) {
-		t.Errorf("unexpected extra labels: got %v", baseLabels)
+	if len(got) != len(want) {
+		t.Errorf("unexpected extra labels: got %v", got)
 	}
 }
