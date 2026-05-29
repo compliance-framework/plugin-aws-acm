@@ -82,7 +82,7 @@ func (l *CompliancePlugin) Eval(request *proto.EvalRequest, apiHelper runner.Api
 
 	if err := apiHelper.CreateEvidence(ctx, evidences); err != nil {
 		l.logger.Error("Error creating evidence", "error", err)
-		return nil, err
+		return &proto.EvalResponse{Status: proto.ExecutionStatus_FAILURE}, err
 	}
 
 	return &proto.EvalResponse{Status: proto.ExecutionStatus_SUCCESS}, nil

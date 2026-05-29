@@ -1,14 +1,12 @@
 package internal
 
 import (
-	"github.com/aws/aws-sdk-go-v2/service/acm"
 	"github.com/hashicorp/go-hclog"
 )
 
 type DataFetcher struct {
 	logger hclog.Logger
 	config *PluginConfig
-	client *acm.Client
 }
 
 func NewDataFetcher(logger hclog.Logger, config *PluginConfig) *DataFetcher {
