@@ -2,6 +2,7 @@ package internal
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -162,6 +163,20 @@ func (df *DataFetcher) fetchCertificate(ctx context.Context, client ACMClient, r
 		InUseBy:                       inUseBy,
 		Tags:                          tags,
 	}, nil
+}
+
+// ToOPAInput serialises c to a map[string]interface{} suitable for passing as
+// OPA input, using the struct's JSON field names (lowercase snake_case).
+func (c CertificateContext) ToOPAInput() (map[string]interface{}, error) {
+	b, err := json.Marshal(c)
+	if err != nil {
+		return nil, err
+	}
+	var m map[string]interface{}
+	if err := json.Unmarshal(b, &m); err != nil {
+		return nil, err
+	}
+	return m, nil
 }
 
 // arnAccountID extracts the 12-digit account ID from an ACM ARN.
