@@ -72,16 +72,32 @@ func (l *CompliancePlugin) Eval(request *proto.EvalRequest, apiHelper runner.Api
 	}
 
 	policyEvaluator := internal.NewPolicyEvaluator(ctx, l.logger, activities)
-	data := map[string]interface{}{"certificates": certs}
 
-	evidences, err := policyEvaluator.Eval(ctx, data, request.PolicyPaths, l.policyData, l.config.PolicyLabels)
-	if err != nil {
-		return &proto.EvalResponse{
-			Status: proto.ExecutionStatus_FAILURE,
-		}, fmt.Errorf("failed to evaluate policies: %w", err)
+	var allEvidences []*proto.Evidence
+	for _, cert := range certs {
+		certInput, err := cert.ToOPAInput()
+		if err != nil {
+			return &proto.EvalResponse{Status: proto.ExecutionStatus_FAILURE},
+				fmt.Errorf("serialising cert %s: %w", cert.CertificateArn, err)
+		}
+		certLabels := internal.MergeMaps(
+			l.config.PolicyLabels,
+			map[string]string{
+				"certificate_arn": cert.CertificateArn,
+				"resource_arn":    cert.CertificateArn,
+				"region":          cert.Region,
+				"account_id":      cert.AccountID,
+			},
+		)
+		certEvidences, err := policyEvaluator.Eval(ctx, certInput, request.PolicyPaths, l.policyData, certLabels)
+		if err != nil {
+			return &proto.EvalResponse{Status: proto.ExecutionStatus_FAILURE},
+				fmt.Errorf("evaluating cert %s: %w", cert.CertificateArn, err)
+		}
+		allEvidences = append(allEvidences, certEvidences...)
 	}
 
-	if err := apiHelper.CreateEvidence(ctx, evidences); err != nil {
+	if err := apiHelper.CreateEvidence(ctx, allEvidences); err != nil {
 		l.logger.Error("Error creating evidence", "error", err)
 		return &proto.EvalResponse{Status: proto.ExecutionStatus_FAILURE}, err
 	}
