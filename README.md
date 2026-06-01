@@ -28,6 +28,11 @@ AWS credentials are resolved from the environment using the standard AWS SDK cre
 }
 ```
 
+## Prerequisites
+
+- Go 1.22+
+- AWS credentials accessible via the standard SDK credential chain
+
 ## Local development
 
 ```bash
@@ -36,3 +41,12 @@ make test           # runs unit tests
 ```
 
 See `examples/agent-config.yaml` for agent configuration examples.
+
+## Contributing
+
+The plugin is intentionally policy-agnostic. To add a new compliance check:
+
+1. Add the required ACM API fields to `internal/data.go` (`CertificateContext` struct and `fetchCertificate`).
+2. Expose the new field via `ToOPAInput()` (inherited automatically from the struct's JSON tags).
+3. Write the new Rego policy in the [`plugin-aws-acm-certificate-policies`](https://github.com/container-solutions/plugin-aws-acm-certificate-policies) repo — see that repo's README for the policy authoring guide.
+4. Add unit tests in `internal/data_test.go` covering the new field for empty, populated, and error cases.
