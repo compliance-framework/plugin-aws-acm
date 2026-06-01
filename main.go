@@ -75,21 +75,7 @@ func (l *CompliancePlugin) Eval(request *proto.EvalRequest, apiHelper runner.Api
 
 	var allEvidences []*proto.Evidence
 	for _, cert := range certs {
-		certInput, err := cert.ToOPAInput()
-		if err != nil {
-			return &proto.EvalResponse{Status: proto.ExecutionStatus_FAILURE},
-				fmt.Errorf("serialising cert %s: %w", cert.CertificateArn, err)
-		}
-		certLabels := internal.MergeMaps(
-			l.config.PolicyLabels,
-			map[string]string{
-				"certificate_arn": cert.CertificateArn,
-				"resource_arn":    cert.CertificateArn,
-				"region":          cert.Region,
-				"account_id":      cert.AccountID,
-			},
-		)
-		certEvidences, err := policyEvaluator.Eval(ctx, certInput, request.PolicyPaths, l.policyData, certLabels)
+		certEvidences, err := policyEvaluator.Eval(ctx, cert, request.PolicyPaths, l.policyData, l.config.PolicyLabels)
 		if err != nil {
 			return &proto.EvalResponse{Status: proto.ExecutionStatus_FAILURE},
 				fmt.Errorf("evaluating cert %s: %w", cert.CertificateArn, err)
