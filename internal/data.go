@@ -10,6 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/acm"
+	"github.com/aws/aws-sdk-go-v2/service/acm/types"
 	"github.com/hashicorp/go-hclog"
 )
 
@@ -86,7 +87,10 @@ func (df *DataFetcher) fetchRegion(ctx context.Context, region string) ([]Certif
 	var certs []CertificateContext
 	var nextToken *string
 	for {
-		out, err := client.ListCertificates(ctx, &acm.ListCertificatesInput{NextToken: nextToken})
+		out, err := client.ListCertificates(ctx, &acm.ListCertificatesInput{
+				NextToken: nextToken,
+				Includes:  &types.Filters{KeyTypes: types.KeyAlgorithmRsa1024.Values()},
+			})
 		if err != nil {
 			return nil, fmt.Errorf("ListCertificates: %w", err)
 		}
@@ -97,8 +101,7 @@ func (df *DataFetcher) fetchRegion(ctx context.Context, region string) ([]Certif
 			}
 			cert, err := df.fetchCertificate(ctx, client, region, arn)
 			if err != nil {
-				df.logger.Warn("skipping certificate", "arn", arn, "error", err)
-				continue
+				return nil, fmt.Errorf("certificate %s: %w", arn, err)
 			}
 			certs = append(certs, cert)
 		}
@@ -157,7 +160,7 @@ func (df *DataFetcher) fetchCertificate(ctx context.Context, client ACMClient, r
 		DomainName:                    aws.ToString(detail.DomainName),
 		Status:                        string(detail.Status),
 		NotAfter:                      detail.NotAfter,
-		KeyAlgorithm:                  string(detail.KeyAlgorithm),
+		KeyAlgorithm:                  strings.ReplaceAll(string(detail.KeyAlgorithm), "-", "_"),
 		TransparencyLoggingPreference: transparencyPref,
 		DomainValidationOptions:       dvos,
 		InUseBy:                       inUseBy,

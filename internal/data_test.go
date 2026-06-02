@@ -145,10 +145,12 @@ func TestFetchData_Pagination(t *testing.T) {
 		"arn:aws:acm:us-east-1:123456789012:certificate/bbb",
 	}
 	callCount := 0
+	var capturedTokens []*string
 
 	mock := &mockACMClient{
-		listCertificates: func(_ context.Context, _ *acm.ListCertificatesInput, _ ...func(*acm.Options)) (*acm.ListCertificatesOutput, error) {
+		listCertificates: func(_ context.Context, params *acm.ListCertificatesInput, _ ...func(*acm.Options)) (*acm.ListCertificatesOutput, error) {
 			callCount++
+			capturedTokens = append(capturedTokens, params.NextToken)
 			if callCount == 1 {
 				return &acm.ListCertificatesOutput{
 					CertificateSummaryList: []types.CertificateSummary{{CertificateArn: aws.String(arns[0])}},
@@ -183,6 +185,12 @@ func TestFetchData_Pagination(t *testing.T) {
 	}
 	if callCount != 2 {
 		t.Errorf("expected 2 ListCertificates calls, got %d", callCount)
+	}
+	if capturedTokens[0] != nil {
+		t.Errorf("first call NextToken: want nil, got %q", aws.ToString(capturedTokens[0]))
+	}
+	if aws.ToString(capturedTokens[1]) != "page2" {
+		t.Errorf("second call NextToken: want %q, got %q", "page2", aws.ToString(capturedTokens[1]))
 	}
 }
 

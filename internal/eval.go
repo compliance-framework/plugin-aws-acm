@@ -2,8 +2,11 @@ package internal
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 
 	policyManager "github.com/compliance-framework/agent/policy-manager"
@@ -66,7 +69,7 @@ func (pe *PolicyEvaluator) Eval(ctx context.Context, cert CertificateContext, po
 			Type:  "tool",
 			Links: []*proto.Link{
 				{
-					Href: "https://github.com/container-solutions/plugin-aws-acm",
+					Href: "https://github.com/compliance-framework/plugin-aws-acm",
 					Rel:  StringAddressed("reference"),
 					Text: StringAddressed("The Continuous Compliance Framework AWS ACM Plugin"),
 				},
@@ -122,7 +125,7 @@ func (pe *PolicyEvaluator) Eval(ctx context.Context, cert CertificateContext, po
 			inventory,
 			actors,
 			pe.stepActivities,
-			policyData,
+			loadBundleRootData(policyPath, policyData),
 		)
 
 		evidence, perr := processor.GenerateResults(ctx, policyPath, input)
@@ -144,6 +147,37 @@ func certificateBaseLabels() map[string]string {
 		"provider": "aws",
 		"type":     "acm-certificate",
 	}
+}
+
+// loadBundleRootData reads data.json from the OPA bundle root and merges it
+// with base. When the agent downloads a policy OCI artifact it returns the
+// policies/ subdirectory as policyPath; the bundle's data.json lives one level
+// up in the bundle root. For local source trees the data.json lives inside the
+// policies/ directory itself, so we check both locations.
+func loadBundleRootData(policyPath string, base map[string]interface{}) map[string]interface{} {
+	candidates := []string{
+		filepath.Join(filepath.Dir(policyPath), "data.json"),
+		filepath.Join(policyPath, "data.json"),
+	}
+	for _, p := range candidates {
+		raw, err := os.ReadFile(p)
+		if err != nil {
+			continue
+		}
+		var bundleData map[string]interface{}
+		if err := json.Unmarshal(raw, &bundleData); err != nil {
+			continue
+		}
+		merged := make(map[string]interface{}, len(bundleData)+len(base))
+		for k, v := range bundleData {
+			merged[k] = v
+		}
+		for k, v := range base {
+			merged[k] = v
+		}
+		return merged
+	}
+	return base
 }
 
 // arnCertID extracts the certificate UUID from an ACM ARN.

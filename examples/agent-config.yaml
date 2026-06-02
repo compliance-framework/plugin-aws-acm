@@ -17,14 +17,14 @@ plugins:
   aws_acm:
     protocol_version: 2
 
-    # OCI image source (production use):
-    source: ghcr.io/container-solutions/plugin-aws-acm:latest
+    # OCI image source (production use); replace vX.Y.Z with the desired release tag:
+    source: ghcr.io/container-solutions/plugin-aws-acm:v0.1.0
 
     # Local binary source (development / air-gapped):
     # source: /usr/local/bin/plugin-aws-acm
 
     policies:
-      - ghcr.io/container-solutions/plugin-aws-acm-certificate-policies:latest
+      - ghcr.io/container-solutions/plugin-aws-acm-certificate-policies:v0.1.0
 
     config:
       # regions (required): comma-separated list of AWS regions to scan.
