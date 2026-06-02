@@ -35,7 +35,10 @@ type CertificateContext struct {
 	DomainName                    string                   `json:"domain_name"`
 	Status                        string                   `json:"status"`
 	NotAfter                      *time.Time               `json:"not_after,omitempty"`
+	IssuedAt                      *time.Time               `json:"issued_at,omitempty"`
 	KeyAlgorithm                  string                   `json:"key_algorithm"`
+	Type                          string                   `json:"type,omitempty"`
+	RenewalEligibility            string                   `json:"renewal_eligibility,omitempty"`
 	TransparencyLoggingPreference string                   `json:"transparency_logging_preference"`
 	DomainValidationOptions       []DomainValidationOption `json:"domain_validation_options"`
 	InUseBy                       []string                 `json:"in_use_by"`
@@ -160,7 +163,10 @@ func (df *DataFetcher) fetchCertificate(ctx context.Context, client ACMClient, r
 		DomainName:                    aws.ToString(detail.DomainName),
 		Status:                        string(detail.Status),
 		NotAfter:                      detail.NotAfter,
+		IssuedAt:                      detail.IssuedAt,
 		KeyAlgorithm:                  strings.ReplaceAll(string(detail.KeyAlgorithm), "-", "_"),
+		Type:                          string(detail.Type),
+		RenewalEligibility:            string(detail.RenewalEligibility),
 		TransparencyLoggingPreference: transparencyPref,
 		DomainValidationOptions:       dvos,
 		InUseBy:                       inUseBy,
