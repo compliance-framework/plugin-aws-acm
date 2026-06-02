@@ -219,6 +219,39 @@ func TestFetchData_MultipleRegions(t *testing.T) {
 	}
 }
 
+func TestFetchData_KeyTypeFilter(t *testing.T) {
+	var capturedIncludes *types.Filters
+
+	mock := &mockACMClient{
+		listCertificates: func(_ context.Context, params *acm.ListCertificatesInput, _ ...func(*acm.Options)) (*acm.ListCertificatesOutput, error) {
+			capturedIncludes = params.Includes
+			return &acm.ListCertificatesOutput{}, nil
+		},
+	}
+
+	f := newTestFetcher([]string{"us-east-1"}, mock)
+	_, err := f.FetchData(context.Background())
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if capturedIncludes == nil {
+		t.Fatal("expected Includes filter to be set, got nil")
+	}
+	if len(capturedIncludes.KeyTypes) == 0 {
+		t.Fatal("expected at least one KeyType in Includes filter")
+	}
+	hasNonDefault := false
+	for _, kt := range capturedIncludes.KeyTypes {
+		if kt != types.KeyAlgorithmRsa2048 {
+			hasNonDefault = true
+			break
+		}
+	}
+	if !hasNonDefault {
+		t.Errorf("expected at least one non-default key type in Includes filter, got %v", capturedIncludes.KeyTypes)
+	}
+}
+
 func TestFetchData_AccountIDFromARN(t *testing.T) {
 	cases := []struct {
 		arn       string

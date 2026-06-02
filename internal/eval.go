@@ -117,6 +117,10 @@ func (pe *PolicyEvaluator) Eval(ctx context.Context, cert CertificateContext, po
 	}
 
 	for _, policyPath := range policyPaths {
+		rootData, err := loadBundleRootData(policyPath, policyData)
+		if err != nil {
+			return nil, fmt.Errorf("loading bundle data for %s: %w", policyPath, err)
+		}
 		processor := policyManager.NewPolicyProcessor(
 			pe.logger,
 			labels,
@@ -125,7 +129,7 @@ func (pe *PolicyEvaluator) Eval(ctx context.Context, cert CertificateContext, po
 			inventory,
 			actors,
 			pe.stepActivities,
-			loadBundleRootData(policyPath, policyData),
+			rootData,
 		)
 
 		evidence, perr := processor.GenerateResults(ctx, policyPath, input)
@@ -154,19 +158,22 @@ func certificateBaseLabels() map[string]string {
 // policies/ subdirectory as policyPath; the bundle's data.json lives one level
 // up in the bundle root. For local source trees the data.json lives inside the
 // policies/ directory itself, so we check both locations.
-func loadBundleRootData(policyPath string, base map[string]interface{}) map[string]interface{} {
+func loadBundleRootData(policyPath string, base map[string]interface{}) (map[string]interface{}, error) {
 	candidates := []string{
 		filepath.Join(filepath.Dir(policyPath), "data.json"),
 		filepath.Join(policyPath, "data.json"),
 	}
 	for _, p := range candidates {
 		raw, err := os.ReadFile(p)
-		if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
 			continue
+		}
+		if err != nil {
+			return nil, fmt.Errorf("reading bundle data %s: %w", p, err)
 		}
 		var bundleData map[string]interface{}
 		if err := json.Unmarshal(raw, &bundleData); err != nil {
-			continue
+			return nil, fmt.Errorf("parsing bundle data %s: %w", p, err)
 		}
 		merged := make(map[string]interface{}, len(bundleData)+len(base))
 		for k, v := range bundleData {
@@ -175,9 +182,9 @@ func loadBundleRootData(policyPath string, base map[string]interface{}) map[stri
 		for k, v := range base {
 			merged[k] = v
 		}
-		return merged
+		return merged, nil
 	}
-	return base
+	return base, nil
 }
 
 // arnCertID extracts the certificate UUID from an ACM ARN.
