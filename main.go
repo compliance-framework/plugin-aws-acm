@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/compliance-framework/agent/runner"
@@ -64,7 +65,7 @@ func (l *CompliancePlugin) Eval(request *proto.EvalRequest, apiHelper runner.Api
 	}
 
 	dataFetcher := internal.NewDataFetcher(l.logger, l.config)
-	data, err := dataFetcher.FetchData()
+	certs, err := dataFetcher.FetchData(ctx)
 	if err != nil {
 		return &proto.EvalResponse{
 			Status: proto.ExecutionStatus_FAILURE,
@@ -73,16 +74,23 @@ func (l *CompliancePlugin) Eval(request *proto.EvalRequest, apiHelper runner.Api
 
 	policyEvaluator := internal.NewPolicyEvaluator(ctx, l.logger, activities)
 
-	evidences, err := policyEvaluator.Eval(ctx, data, request.PolicyPaths, l.policyData, l.config.PolicyLabels)
-	if err != nil {
-		return &proto.EvalResponse{
-			Status: proto.ExecutionStatus_FAILURE,
-		}, fmt.Errorf("failed to evaluate policies: %w", err)
+	var allEvidences []*proto.Evidence
+	var evalErrors error
+	for _, cert := range certs {
+		certEvidences, err := policyEvaluator.Eval(ctx, cert, request.GetPolicyPaths(), l.policyData, l.config.PolicyLabels)
+		allEvidences = append(allEvidences, certEvidences...)
+		if err != nil {
+			evalErrors = errors.Join(evalErrors, fmt.Errorf("evaluating cert %s: %w", cert.CertificateArn, err))
+		}
 	}
 
-	if err := apiHelper.CreateEvidence(ctx, evidences); err != nil {
+	if err := apiHelper.CreateEvidence(ctx, allEvidences); err != nil {
 		l.logger.Error("Error creating evidence", "error", err)
 		return &proto.EvalResponse{Status: proto.ExecutionStatus_FAILURE}, err
+	}
+
+	if evalErrors != nil {
+		return &proto.EvalResponse{Status: proto.ExecutionStatus_FAILURE}, evalErrors
 	}
 
 	return &proto.EvalResponse{Status: proto.ExecutionStatus_SUCCESS}, nil

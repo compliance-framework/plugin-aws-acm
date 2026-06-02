@@ -1,0 +1,48 @@
+daemon: false
+verbosity: 1
+
+api:
+  url: http://localhost:8080
+  auth:
+    client_id: ""
+    client_secret: ""
+
+agent_evidence:
+  enabled: true
+  emit_on_run_completion: true
+
+schedule: "0 */6 * * *"  # every 6 hours; omit or set daemon: true for continuous mode
+
+plugins:
+  aws_acm:
+    protocol_version: 2
+
+    # OCI image source (production use); replace vX.Y.Z with the desired release tag:
+    source: ghcr.io/container-solutions/plugin-aws-acm:v0.1.0
+
+    # Local binary source (development / air-gapped):
+    # source: /usr/local/bin/plugin-aws-acm
+
+    policies:
+      - ghcr.io/container-solutions/plugin-aws-acm-certificate-policies:v0.1.0
+
+    config:
+      # regions (required): comma-separated list of AWS regions to scan.
+      # Example: "us-east-1, eu-west-1, ap-southeast-2"
+      regions: "us-east-1"
+
+      # accounts (optional): comma-separated list of AWS account IDs.
+      # When set, only certificates whose ARN matches one of these accounts are
+      # evaluated. Leave empty to evaluate all accounts accessible via the
+      # credential chain.
+      accounts: ""
+
+      # policy_labels (optional): JSON object of extra labels merged onto every
+      # piece of Evidence produced by this plugin. Useful for environment or
+      # team tagging. Must be valid JSON if provided.
+      # Example: '{"env":"prod","team":"platform"}'
+      policy_labels: ""
+
+    labels:
+      provider: aws
+      type: acm-certificate
