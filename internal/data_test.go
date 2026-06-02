@@ -252,6 +252,133 @@ func TestFetchData_KeyTypeFilter(t *testing.T) {
 	}
 }
 
+func TestFetchData_NewFields_AmazonIssuedEligible(t *testing.T) {
+	arn := "arn:aws:acm:us-east-1:123456789012:certificate/eligible"
+	issuedAt := time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)
+	notAfter := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
+
+	mock := &mockACMClient{
+		listCertificates: func(_ context.Context, _ *acm.ListCertificatesInput, _ ...func(*acm.Options)) (*acm.ListCertificatesOutput, error) {
+			return &acm.ListCertificatesOutput{
+				CertificateSummaryList: []types.CertificateSummary{{CertificateArn: aws.String(arn)}},
+			}, nil
+		},
+		describeCertificate: func(_ context.Context, _ *acm.DescribeCertificateInput, _ ...func(*acm.Options)) (*acm.DescribeCertificateOutput, error) {
+			return &acm.DescribeCertificateOutput{
+				Certificate: &types.CertificateDetail{
+					CertificateArn:     aws.String(arn),
+					DomainName:         aws.String("example.com"),
+					Status:             types.CertificateStatusIssued,
+					NotAfter:           &notAfter,
+					IssuedAt:           &issuedAt,
+					Type:               types.CertificateTypeAmazonIssued,
+					RenewalEligibility: types.RenewalEligibilityEligible,
+				},
+			}, nil
+		},
+		listTagsForCertificate: func(_ context.Context, _ *acm.ListTagsForCertificateInput, _ ...func(*acm.Options)) (*acm.ListTagsForCertificateOutput, error) {
+			return &acm.ListTagsForCertificateOutput{}, nil
+		},
+	}
+
+	f := newTestFetcher([]string{"us-east-1"}, mock)
+	certs, err := f.FetchData(context.Background())
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	c := certs[0]
+	if c.Type != "AMAZON_ISSUED" {
+		t.Errorf("type: want %q, got %q", "AMAZON_ISSUED", c.Type)
+	}
+	if c.RenewalEligibility != "ELIGIBLE" {
+		t.Errorf("renewal_eligibility: want %q, got %q", "ELIGIBLE", c.RenewalEligibility)
+	}
+	if c.IssuedAt == nil || !c.IssuedAt.Equal(issuedAt) {
+		t.Errorf("issued_at: want %v, got %v", issuedAt, c.IssuedAt)
+	}
+}
+
+func TestFetchData_NewFields_AmazonIssuedIneligible(t *testing.T) {
+	arn := "arn:aws:acm:us-east-1:123456789012:certificate/ineligible"
+
+	mock := &mockACMClient{
+		listCertificates: func(_ context.Context, _ *acm.ListCertificatesInput, _ ...func(*acm.Options)) (*acm.ListCertificatesOutput, error) {
+			return &acm.ListCertificatesOutput{
+				CertificateSummaryList: []types.CertificateSummary{{CertificateArn: aws.String(arn)}},
+			}, nil
+		},
+		describeCertificate: func(_ context.Context, _ *acm.DescribeCertificateInput, _ ...func(*acm.Options)) (*acm.DescribeCertificateOutput, error) {
+			return &acm.DescribeCertificateOutput{
+				Certificate: &types.CertificateDetail{
+					CertificateArn:     aws.String(arn),
+					DomainName:         aws.String("example.com"),
+					Status:             types.CertificateStatusIssued,
+					Type:               types.CertificateTypeAmazonIssued,
+					RenewalEligibility: types.RenewalEligibilityIneligible,
+				},
+			}, nil
+		},
+		listTagsForCertificate: func(_ context.Context, _ *acm.ListTagsForCertificateInput, _ ...func(*acm.Options)) (*acm.ListTagsForCertificateOutput, error) {
+			return &acm.ListTagsForCertificateOutput{}, nil
+		},
+	}
+
+	f := newTestFetcher([]string{"us-east-1"}, mock)
+	certs, err := f.FetchData(context.Background())
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	c := certs[0]
+	if c.RenewalEligibility != "INELIGIBLE" {
+		t.Errorf("renewal_eligibility: want %q, got %q", "INELIGIBLE", c.RenewalEligibility)
+	}
+	if c.IssuedAt != nil {
+		t.Errorf("issued_at: want nil for cert without IssuedAt, got %v", c.IssuedAt)
+	}
+}
+
+func TestFetchData_NewFields_ImportedCert(t *testing.T) {
+	arn := "arn:aws:acm:us-east-1:123456789012:certificate/imported"
+
+	mock := &mockACMClient{
+		listCertificates: func(_ context.Context, _ *acm.ListCertificatesInput, _ ...func(*acm.Options)) (*acm.ListCertificatesOutput, error) {
+			return &acm.ListCertificatesOutput{
+				CertificateSummaryList: []types.CertificateSummary{{CertificateArn: aws.String(arn)}},
+			}, nil
+		},
+		describeCertificate: func(_ context.Context, _ *acm.DescribeCertificateInput, _ ...func(*acm.Options)) (*acm.DescribeCertificateOutput, error) {
+			return &acm.DescribeCertificateOutput{
+				Certificate: &types.CertificateDetail{
+					CertificateArn: aws.String(arn),
+					DomainName:     aws.String("example.com"),
+					Status:         types.CertificateStatusIssued,
+					Type:           types.CertificateTypeImported,
+					// RenewalEligibility and IssuedAt are zero/nil for imported certs
+				},
+			}, nil
+		},
+		listTagsForCertificate: func(_ context.Context, _ *acm.ListTagsForCertificateInput, _ ...func(*acm.Options)) (*acm.ListTagsForCertificateOutput, error) {
+			return &acm.ListTagsForCertificateOutput{}, nil
+		},
+	}
+
+	f := newTestFetcher([]string{"us-east-1"}, mock)
+	certs, err := f.FetchData(context.Background())
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	c := certs[0]
+	if c.Type != "IMPORTED" {
+		t.Errorf("type: want %q, got %q", "IMPORTED", c.Type)
+	}
+	if c.RenewalEligibility != "" {
+		t.Errorf("renewal_eligibility: want %q for imported cert, got %q", "", c.RenewalEligibility)
+	}
+	if c.IssuedAt != nil {
+		t.Errorf("issued_at: want nil for imported cert, got %v", c.IssuedAt)
+	}
+}
+
 func TestFetchData_AccountIDFromARN(t *testing.T) {
 	cases := []struct {
 		arn       string
