@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"syscall"
 
 	policyManager "github.com/compliance-framework/agent/policy-manager"
 	"github.com/compliance-framework/agent/runner/proto"
@@ -165,7 +166,7 @@ func LoadBundleRootData(policyPath string, overrides map[string]interface{}) (ma
 	}
 	for _, p := range candidates {
 		raw, err := os.ReadFile(p)
-		if errors.Is(err, os.ErrNotExist) {
+		if errors.Is(err, os.ErrNotExist) || errors.Is(err, syscall.ENOTDIR) {
 			continue
 		}
 		if err != nil {

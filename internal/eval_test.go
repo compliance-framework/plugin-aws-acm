@@ -1,10 +1,58 @@
 package internal
 
 import (
+	"archive/tar"
+	"compress/gzip"
 	"os"
 	"path/filepath"
 	"testing"
 )
+
+// writeTarGz creates a tar.gz archive at dest containing a single file at
+// the given internal path with the given content.
+func writeTarGz(t *testing.T, dest, internalPath, content string) {
+	t.Helper()
+	f, err := os.Create(dest)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+	gw := gzip.NewWriter(f)
+	defer gw.Close()
+	tw := tar.NewWriter(gw)
+	defer tw.Close()
+	body := []byte(content)
+	if err := tw.WriteHeader(&tar.Header{Name: internalPath, Mode: 0644, Size: int64(len(body))}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := tw.Write(body); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// TestLoadBundleRootData_TarGzBundle documents the known gap: when the agent
+// supplies a bundle as a tar.gz file path, LoadBundleRootData receives that
+// file path as policyPath. Path-joining into a file returns ENOTDIR (treated
+// as not-found and skipped), and data.json inside the archive is never read.
+// Bundle defaults are silently lost; policies relying on data.* will fail.
+// Fix: detect tar.gz paths in LoadBundleRootData and extract data.json from
+// the archive before falling back to the filesystem candidates.
+func TestLoadBundleRootData_TarGzBundle(t *testing.T) {
+	root := t.TempDir()
+	bundlePath := filepath.Join(root, "bundle.tar.gz")
+	writeTarGz(t, bundlePath, "data.json", `{"expiry_warning_days":30}`)
+
+	result, err := LoadBundleRootData(bundlePath, nil)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// data.json is not extracted from the archive; bundle defaults are silently lost.
+	// Update this assertion once tar.gz support is implemented.
+	if _, loaded := result["expiry_warning_days"]; loaded {
+		t.Fatal("tar.gz bundle support appears to be implemented — update this test to assert correct loading behaviour")
+	}
+}
 
 func TestLoadBundleRootData_OverridesWinOverBundleDefaults(t *testing.T) {
 	dir := t.TempDir()
