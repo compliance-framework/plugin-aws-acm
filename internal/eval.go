@@ -117,10 +117,6 @@ func (pe *PolicyEvaluator) Eval(ctx context.Context, cert CertificateContext, po
 	}
 
 	for _, policyPath := range policyPaths {
-		rootData, err := loadBundleRootData(policyPath, policyData)
-		if err != nil {
-			return nil, fmt.Errorf("loading bundle data for %s: %w", policyPath, err)
-		}
 		processor := policyManager.NewPolicyProcessor(
 			pe.logger,
 			labels,
@@ -129,10 +125,13 @@ func (pe *PolicyEvaluator) Eval(ctx context.Context, cert CertificateContext, po
 			inventory,
 			actors,
 			pe.stepActivities,
-			rootData,
+			policyData,
 		)
 
 		evidence, perr := processor.GenerateResults(ctx, policyPath, input)
+		for _, ev := range evidence {
+			ev.Title = fmt.Sprintf("%s [%s]", ev.GetTitle(), cert.DomainName)
+		}
 		evidences = append(evidences, evidence...)
 		if perr != nil {
 			accumulatedErrors = errors.Join(accumulatedErrors, perr)
@@ -153,15 +152,16 @@ func certificateBaseLabels() map[string]string {
 	}
 }
 
-// loadBundleRootData reads data.json from the OPA bundle root and merges it
-// with base. When the agent downloads a policy OCI artifact it returns the
+// LoadBundleRootData reads data.json from the OPA bundle root and merges it
+// with overrides. When the agent downloads a policy OCI artifact it returns the
 // policies/ subdirectory as policyPath; the bundle's data.json lives one level
 // up in the bundle root. For local source trees the data.json lives inside the
-// policies/ directory itself, so we check both locations.
-func loadBundleRootData(policyPath string, base map[string]interface{}) (map[string]interface{}, error) {
+// policies/ directory itself, so both locations are checked. overrides win on
+// conflict, so operator-supplied policy_data takes precedence over bundle defaults.
+func LoadBundleRootData(policyPath string, overrides map[string]interface{}) (map[string]interface{}, error) {
 	candidates := []string{
-		filepath.Join(filepath.Dir(policyPath), "data.json"),
 		filepath.Join(policyPath, "data.json"),
+		filepath.Join(filepath.Dir(policyPath), "data.json"),
 	}
 	for _, p := range candidates {
 		raw, err := os.ReadFile(p)
@@ -175,16 +175,16 @@ func loadBundleRootData(policyPath string, base map[string]interface{}) (map[str
 		if err := json.Unmarshal(raw, &bundleData); err != nil {
 			return nil, fmt.Errorf("parsing bundle data %s: %w", p, err)
 		}
-		merged := make(map[string]interface{}, len(bundleData)+len(base))
+		merged := make(map[string]interface{}, len(bundleData)+len(overrides))
 		for k, v := range bundleData {
 			merged[k] = v
 		}
-		for k, v := range base {
+		for k, v := range overrides {
 			merged[k] = v
 		}
 		return merged, nil
 	}
-	return base, nil
+	return overrides, nil
 }
 
 // arnCertID extracts the certificate UUID from an ACM ARN.
