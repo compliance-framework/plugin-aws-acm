@@ -32,7 +32,7 @@ func NewPolicyEvaluator(ctx context.Context, logger hclog.Logger, stepActivities
 // extraLabels (e.g. PolicyLabels from config) are merged with cert-derived labels;
 // SeededUUID derives the evidence UUID from ALL resulting labels, so label keys must
 // not change between runs.
-func (pe *PolicyEvaluator) Eval(ctx context.Context, cert CertificateContext, policyPaths []string, policyData map[string]interface{}, extraLabels map[string]string) ([]*proto.Evidence, error) {
+func (pe *PolicyEvaluator) Eval(ctx context.Context, cert CertificateContext, policyPaths []string, policyDataByPath map[string]map[string]interface{}, extraLabels map[string]string) ([]*proto.Evidence, error) {
 	var accumulatedErrors error
 	evidences := make([]*proto.Evidence, 0)
 
@@ -117,10 +117,7 @@ func (pe *PolicyEvaluator) Eval(ctx context.Context, cert CertificateContext, po
 	}
 
 	for _, policyPath := range policyPaths {
-		rootData, err := loadBundleRootData(policyPath, policyData)
-		if err != nil {
-			return nil, fmt.Errorf("loading bundle data for %s: %w", policyPath, err)
-		}
+		rootData := policyDataByPath[policyPath]
 		processor := policyManager.NewPolicyProcessor(
 			pe.logger,
 			labels,
@@ -156,12 +153,13 @@ func certificateBaseLabels() map[string]string {
 	}
 }
 
-// loadBundleRootData reads data.json from the OPA bundle root and merges it
-// with base. When the agent downloads a policy OCI artifact it returns the
+// LoadBundleRootData reads data.json from the OPA bundle root and merges it
+// with overrides. When the agent downloads a policy OCI artifact it returns the
 // policies/ subdirectory as policyPath; the bundle's data.json lives one level
 // up in the bundle root. For local source trees the data.json lives inside the
-// policies/ directory itself, so we check both locations.
-func loadBundleRootData(policyPath string, base map[string]interface{}) (map[string]interface{}, error) {
+// policies/ directory itself, so both locations are checked. overrides win on
+// conflict, so operator-supplied policy_data takes precedence over bundle defaults.
+func LoadBundleRootData(policyPath string, overrides map[string]interface{}) (map[string]interface{}, error) {
 	candidates := []string{
 		filepath.Join(filepath.Dir(policyPath), "data.json"),
 		filepath.Join(policyPath, "data.json"),
@@ -178,16 +176,16 @@ func loadBundleRootData(policyPath string, base map[string]interface{}) (map[str
 		if err := json.Unmarshal(raw, &bundleData); err != nil {
 			return nil, fmt.Errorf("parsing bundle data %s: %w", p, err)
 		}
-		merged := make(map[string]interface{}, len(bundleData)+len(base))
+		merged := make(map[string]interface{}, len(bundleData)+len(overrides))
 		for k, v := range bundleData {
 			merged[k] = v
 		}
-		for k, v := range base {
+		for k, v := range overrides {
 			merged[k] = v
 		}
 		return merged, nil
 	}
-	return base, nil
+	return overrides, nil
 }
 
 // arnCertID extracts the certificate UUID from an ACM ARN.

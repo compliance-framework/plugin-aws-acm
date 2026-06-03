@@ -72,12 +72,23 @@ func (l *CompliancePlugin) Eval(request *proto.EvalRequest, apiHelper runner.Api
 		}, fmt.Errorf("failed to fetch data: %w", err)
 	}
 
+	// Pre-load and merge bundle data.json defaults with operator overrides once per
+	// policy path, rather than re-reading from disk on every per-certificate Eval call.
+	policyDataByPath := make(map[string]map[string]interface{}, len(request.GetPolicyPaths()))
+	for _, path := range request.GetPolicyPaths() {
+		merged, err := internal.LoadBundleRootData(path, l.policyData)
+		if err != nil {
+			return &proto.EvalResponse{Status: proto.ExecutionStatus_FAILURE}, fmt.Errorf("loading bundle data for %s: %w", path, err)
+		}
+		policyDataByPath[path] = merged
+	}
+
 	policyEvaluator := internal.NewPolicyEvaluator(ctx, l.logger, activities)
 
 	var allEvidences []*proto.Evidence
 	var evalErrors error
 	for _, cert := range certs {
-		certEvidences, err := policyEvaluator.Eval(ctx, cert, request.GetPolicyPaths(), l.policyData, l.config.PolicyLabels)
+		certEvidences, err := policyEvaluator.Eval(ctx, cert, request.GetPolicyPaths(), policyDataByPath, l.config.PolicyLabels)
 		allEvidences = append(allEvidences, certEvidences...)
 		if err != nil {
 			evalErrors = errors.Join(evalErrors, fmt.Errorf("evaluating cert %s: %w", cert.CertificateArn, err))
