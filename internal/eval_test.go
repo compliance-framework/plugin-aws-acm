@@ -50,6 +50,35 @@ func TestLoadBundleRootData_NoBundleDataJsonReturnsOverrides(t *testing.T) {
 	}
 }
 
+func TestLoadBundleRootData_PolicyPathDataJsonWinsOverParent(t *testing.T) {
+	root := t.TempDir()
+	parentJSON := `{"expiry_warning_days":30,"source":"parent"}`
+	if err := os.WriteFile(filepath.Join(root, "data.json"), []byte(parentJSON), 0644); err != nil {
+		t.Fatal(err)
+	}
+	policiesDir := filepath.Join(root, "policies")
+	if err := os.Mkdir(policiesDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+	policiesJSON := `{"expiry_warning_days":60,"source":"policyPath"}`
+	if err := os.WriteFile(filepath.Join(policiesDir, "data.json"), []byte(policiesJSON), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// When both data.json locations exist, policyPath/data.json must win.
+	result, err := LoadBundleRootData(policiesDir, nil)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if got := result["source"]; got != "policyPath" {
+		t.Errorf("source: got %v, want policyPath", got)
+	}
+	if got := result["expiry_warning_days"]; got != float64(60) {
+		t.Errorf("expiry_warning_days: got %v, want 60", got)
+	}
+}
+
 func TestLoadBundleRootData_FindsDataJsonOneDirectoryUp(t *testing.T) {
 	root := t.TempDir()
 	bundleJSON := `{"expiry_warning_days":30}`

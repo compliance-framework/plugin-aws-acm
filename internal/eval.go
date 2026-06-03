@@ -160,8 +160,8 @@ func certificateBaseLabels() map[string]string {
 // conflict, so operator-supplied policy_data takes precedence over bundle defaults.
 func LoadBundleRootData(policyPath string, overrides map[string]interface{}) (map[string]interface{}, error) {
 	candidates := []string{
-		filepath.Join(filepath.Dir(policyPath), "data.json"),
 		filepath.Join(policyPath, "data.json"),
+		filepath.Join(filepath.Dir(policyPath), "data.json"),
 	}
 	for _, p := range candidates {
 		raw, err := os.ReadFile(p)
