@@ -30,27 +30,37 @@ func writeTarGz(t *testing.T, dest, internalPath, content string) {
 	}
 }
 
-// TestLoadBundleRootData_TarGzBundle documents the known gap: when the agent
-// supplies a bundle as a tar.gz file path, LoadBundleRootData receives that
-// file path as policyPath. Path-joining into a file returns ENOTDIR (treated
-// as not-found and skipped), and data.json inside the archive is never read.
-// Bundle defaults are silently lost; policies relying on data.* will fail.
-// Fix: detect tar.gz paths in LoadBundleRootData and extract data.json from
-// the archive before falling back to the filesystem candidates.
 func TestLoadBundleRootData_TarGzBundle(t *testing.T) {
 	root := t.TempDir()
 	bundlePath := filepath.Join(root, "bundle.tar.gz")
-	writeTarGz(t, bundlePath, "data.json", `{"expiry_warning_days":30}`)
+	writeTarGz(t, bundlePath, "data.json", `{"expiry_warning_days":30,"required_certificate_tags":["Environment"]}`)
 
 	result, err := LoadBundleRootData(bundlePath, nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	// data.json is not extracted from the archive; bundle defaults are silently lost.
-	// Update this assertion once tar.gz support is implemented.
-	if _, loaded := result["expiry_warning_days"]; loaded {
-		t.Fatal("tar.gz bundle support appears to be implemented — update this test to assert correct loading behaviour")
+	if got := result["expiry_warning_days"]; got != float64(30) {
+		t.Errorf("expiry_warning_days: got %v, want 30", got)
+	}
+	if _, ok := result["required_certificate_tags"]; !ok {
+		t.Error("required_certificate_tags from tar.gz bundle missing from result")
+	}
+}
+
+func TestLoadBundleRootData_TarGzBundleOverridesWin(t *testing.T) {
+	root := t.TempDir()
+	bundlePath := filepath.Join(root, "bundle.tar.gz")
+	writeTarGz(t, bundlePath, "data.json", `{"expiry_warning_days":30}`)
+
+	overrides := map[string]interface{}{"expiry_warning_days": float64(90)}
+	result, err := LoadBundleRootData(bundlePath, overrides)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if got := result["expiry_warning_days"]; got != float64(90) {
+		t.Errorf("expiry_warning_days: got %v, want 90 (operator override must win)", got)
 	}
 }
 

@@ -1,10 +1,13 @@
 package internal
 
 import (
+	"archive/tar"
+	"compress/gzip"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -160,6 +163,10 @@ func certificateBaseLabels() map[string]string {
 // policies/ directory itself, so both locations are checked. overrides win on
 // conflict, so operator-supplied policy_data takes precedence over bundle defaults.
 func LoadBundleRootData(policyPath string, overrides map[string]interface{}) (map[string]interface{}, error) {
+	if strings.HasSuffix(policyPath, ".tar.gz") {
+		return loadDataFromTarGz(policyPath, overrides)
+	}
+
 	candidates := []string{
 		filepath.Join(policyPath, "data.json"),
 		filepath.Join(filepath.Dir(policyPath), "data.json"),
@@ -184,6 +191,52 @@ func LoadBundleRootData(policyPath string, overrides map[string]interface{}) (ma
 			merged[k] = v
 		}
 		return merged, nil
+	}
+	return overrides, nil
+}
+
+// loadDataFromTarGz reads data.json from the root of a tar.gz OPA bundle and
+// merges it with overrides (overrides win on conflict).
+func loadDataFromTarGz(archivePath string, overrides map[string]interface{}) (map[string]interface{}, error) {
+	f, err := os.Open(archivePath)
+	if err != nil {
+		return nil, fmt.Errorf("opening bundle %s: %w", archivePath, err)
+	}
+	defer f.Close()
+
+	gr, err := gzip.NewReader(f)
+	if err != nil {
+		return nil, fmt.Errorf("reading gzip from bundle %s: %w", archivePath, err)
+	}
+	defer gr.Close()
+
+	tr := tar.NewReader(gr)
+	for {
+		hdr, err := tr.Next()
+		if errors.Is(err, io.EOF) {
+			break
+		}
+		if err != nil {
+			return nil, fmt.Errorf("reading tar from bundle %s: %w", archivePath, err)
+		}
+		if strings.TrimPrefix(hdr.Name, "./") == "data.json" {
+			raw, err := io.ReadAll(tr)
+			if err != nil {
+				return nil, fmt.Errorf("reading data.json from bundle %s: %w", archivePath, err)
+			}
+			var bundleData map[string]interface{}
+			if err := json.Unmarshal(raw, &bundleData); err != nil {
+				return nil, fmt.Errorf("parsing data.json from bundle %s: %w", archivePath, err)
+			}
+			merged := make(map[string]interface{}, len(bundleData)+len(overrides))
+			for k, v := range bundleData {
+				merged[k] = v
+			}
+			for k, v := range overrides {
+				merged[k] = v
+			}
+			return merged, nil
+		}
 	}
 	return overrides, nil
 }
