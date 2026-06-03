@@ -32,7 +32,7 @@ func NewPolicyEvaluator(ctx context.Context, logger hclog.Logger, stepActivities
 // extraLabels (e.g. PolicyLabels from config) are merged with cert-derived labels;
 // SeededUUID derives the evidence UUID from ALL resulting labels, so label keys must
 // not change between runs.
-func (pe *PolicyEvaluator) Eval(ctx context.Context, cert CertificateContext, policyPaths []string, policyDataByPath map[string]map[string]interface{}, extraLabels map[string]string) ([]*proto.Evidence, error) {
+func (pe *PolicyEvaluator) Eval(ctx context.Context, cert CertificateContext, policyPaths []string, policyData map[string]interface{}, extraLabels map[string]string) ([]*proto.Evidence, error) {
 	var accumulatedErrors error
 	evidences := make([]*proto.Evidence, 0)
 
@@ -117,7 +117,6 @@ func (pe *PolicyEvaluator) Eval(ctx context.Context, cert CertificateContext, po
 	}
 
 	for _, policyPath := range policyPaths {
-		rootData := policyDataByPath[policyPath]
 		processor := policyManager.NewPolicyProcessor(
 			pe.logger,
 			labels,
@@ -126,7 +125,7 @@ func (pe *PolicyEvaluator) Eval(ctx context.Context, cert CertificateContext, po
 			inventory,
 			actors,
 			pe.stepActivities,
-			rootData,
+			policyData,
 		)
 
 		evidence, perr := processor.GenerateResults(ctx, policyPath, input)
