@@ -133,6 +133,9 @@ func (pe *PolicyEvaluator) Eval(ctx context.Context, cert CertificateContext, po
 		)
 
 		evidence, perr := processor.GenerateResults(ctx, policyPath, input)
+		for _, ev := range evidence {
+			ev.Title = fmt.Sprintf("%s [%s]", ev.Title, cert.DomainName)
+		}
 		evidences = append(evidences, evidence...)
 		if perr != nil {
 			accumulatedErrors = errors.Join(accumulatedErrors, perr)
