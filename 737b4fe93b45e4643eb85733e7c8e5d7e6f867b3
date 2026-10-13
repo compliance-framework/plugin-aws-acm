@@ -1,0 +1,5 @@
+lisa-design:
+- Manifest seeded at 0.1.0 (releases/latest = v0.1.0, a final vX.Y.Z tag whose commit 5c05d55 is an ancestor of main); no bootstrap-sha.
+- release.yml passes protocol-version "2": main.go serves runner.RunnerV2GRPCPlugin. Old v0.1.0/latest OCI artifacts have no org.ccf.plugin.protocol.version annotation, so agents without protocol_version config run them as v1; from the next release they run v2. Intentional (spec), called out in the PR body.
+- .goreleaser.yaml keeps goarch [amd64, arm64] and the current archive name_template (4 archives, as v0.1.0 published); only the release block (prerelease: auto, replace_existing_artifacts: true) is added. Not aligned to mock-plugin-1's goarch defaults, which would add 386 archives.
+- Callers copied from plugin-file-attestation main (already at v1.5.2 with the W1-S1 suffix dropped), identical to mock-plugin-1 / mock-plugin-policies-1 apart from the pins.
