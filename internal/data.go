@@ -91,9 +91,9 @@ func (df *DataFetcher) fetchRegion(ctx context.Context, region string) ([]Certif
 	var nextToken *string
 	for {
 		out, err := client.ListCertificates(ctx, &acm.ListCertificatesInput{
-				NextToken: nextToken,
-				Includes:  &types.Filters{KeyTypes: types.KeyAlgorithmRsa1024.Values()},
-			})
+			NextToken: nextToken,
+			Includes:  &types.Filters{KeyTypes: types.KeyAlgorithmRsa1024.Values()},
+		})
 		if err != nil {
 			return nil, fmt.Errorf("ListCertificates: %w", err)
 		}
