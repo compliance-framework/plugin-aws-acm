@@ -1,0 +1,4 @@
+lisa-design:
+- ci.yml is copied verbatim from compliance-framework/mock-plugin-1 (workflows v1.5.1, 7b55019e), minus its mock-only first comment line; default branch is main, so push: branches: [main] is kept.
+- push.yml and test.yml deleted; only push.yml called test.yml (release.yml calls build-and-upload.yml only). release.yml and build-and-upload.yml untouched (W3 replaces them).
+- goreleaser archives.format -> formats: [tar.gz]: verified with a full snapshot release before/after that archive names, platforms and contents (README.md, plugin) are identical; goreleaser check now exits 0.
