@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.2](https://github.com/compliance-framework/plugin-aws-acm/compare/v0.1.1...v0.1.2) (2026-10-22)
+
+
+### Bug Fixes
+
+* **deps:** bump agent to v0.9.3, workflows to v1.7.0 ([#25](https://github.com/compliance-framework/plugin-aws-acm/issues/25)) ([e5ca480](https://github.com/compliance-framework/plugin-aws-acm/commit/e5ca480ab0b741ec1d247b56c291cd7ba87350d6))
+
 ## [0.1.1](https://github.com/compliance-framework/plugin-aws-acm/compare/v0.1.0...v0.1.1) (2026-10-14)
 
 
