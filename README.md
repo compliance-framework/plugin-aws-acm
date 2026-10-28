@@ -30,7 +30,7 @@ AWS credentials are resolved from the environment using the standard AWS SDK cre
 
 ## Prerequisites
 
-- Go 1.22+
+- Go 1.26.1+ (CI and releases build with the `toolchain` line in `go.mod`, which `go` downloads when yours is older)
 - AWS credentials accessible via the standard SDK credential chain
 
 ## Local development
