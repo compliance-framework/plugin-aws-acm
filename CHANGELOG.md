@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.1.2](https://github.com/compliance-framework/plugin-aws-acm/compare/v0.1.1...v0.1.2) (2026-10-28)
+
+
+### Bug Fixes
+
+* **deps:** bump agent to v0.9.3, workflows to v1.7.0 ([#25](https://github.com/compliance-framework/plugin-aws-acm/issues/25)) ([e5ca480](https://github.com/compliance-framework/plugin-aws-acm/commit/e5ca480ab0b741ec1d247b56c291cd7ba87350d6))
+* **deps:** bump agent to v0.9.4 ([#30](https://github.com/compliance-framework/plugin-aws-acm/issues/30)) ([244238a](https://github.com/compliance-framework/plugin-aws-acm/commit/244238a57ae291810d118c6308a8fb26423fcff1))
+* **deps:** update module github.com/aws/aws-sdk-go-v2/service/acm to v1.50.5 ([#27](https://github.com/compliance-framework/plugin-aws-acm/issues/27)) ([e7eeee5](https://github.com/compliance-framework/plugin-aws-acm/commit/e7eeee57c18edb4ed645814fe20f666dfcf7e40f))
+* **deps:** update module github.com/hashicorp/go-plugin to v1.8.0 ([#28](https://github.com/compliance-framework/plugin-aws-acm/issues/28)) ([145f81d](https://github.com/compliance-framework/plugin-aws-acm/commit/145f81de9deae888c92f3814db6e3ba4d4f8dfb7))
+* **deps:** update module golang.org/x/net to v0.62.0 [security] ([#29](https://github.com/compliance-framework/plugin-aws-acm/issues/29)) ([08e9e7b](https://github.com/compliance-framework/plugin-aws-acm/commit/08e9e7b7da797b860a32299dcb79e3b4c6055f2c))
+
 ## [0.1.1](https://github.com/compliance-framework/plugin-aws-acm/compare/v0.1.0...v0.1.1) (2026-10-14)
 
 
