@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.3](https://github.com/compliance-framework/plugin-aws-acm/compare/v0.1.2...v0.1.3) (2026-10-30)
+
+
+### Bug Fixes
+
+* **deps:** build with the go1.26.10 toolchain so Renovate can ship Go security fixes ([#31](https://github.com/compliance-framework/plugin-aws-acm/issues/31)) ([dc276f7](https://github.com/compliance-framework/plugin-aws-acm/commit/dc276f7251c8fcff6bb225a17a8db7b5e3e7bb0a))
+* **deps:** update aws-sdk-go-v2 monorepo ([#34](https://github.com/compliance-framework/plugin-aws-acm/issues/34)) ([02bd204](https://github.com/compliance-framework/plugin-aws-acm/commit/02bd2041eb41159105e1dc677f7f01b977b2cc2e))
+
 ## [0.1.2](https://github.com/compliance-framework/plugin-aws-acm/compare/v0.1.1...v0.1.2) (2026-10-28)
 
 
