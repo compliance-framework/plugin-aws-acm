@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.4](https://github.com/compliance-framework/plugin-aws-acm/compare/v0.1.3...v0.1.4) (2026-11-07)
+
+
+### Bug Fixes
+
+* **deps:** update aws-sdk-go-v2 monorepo ([#38](https://github.com/compliance-framework/plugin-aws-acm/issues/38)) ([202d0db](https://github.com/compliance-framework/plugin-aws-acm/commit/202d0db4945d98d48e1bff44ac6e8f78060bb3f2))
+
 ## [0.1.3](https://github.com/compliance-framework/plugin-aws-acm/compare/v0.1.2...v0.1.3) (2026-11-02)
 
 
