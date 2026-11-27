@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.1.4](https://github.com/compliance-framework/plugin-aws-acm/compare/v0.1.3...v0.1.4) (2026-11-27)
+
+
+### Bug Fixes
+
+* **deps:** update aws-sdk-go-v2 monorepo ([#38](https://github.com/compliance-framework/plugin-aws-acm/issues/38)) ([202d0db](https://github.com/compliance-framework/plugin-aws-acm/commit/202d0db4945d98d48e1bff44ac6e8f78060bb3f2))
+* **deps:** update aws-sdk-go-v2 monorepo ([#42](https://github.com/compliance-framework/plugin-aws-acm/issues/42)) ([3df11a1](https://github.com/compliance-framework/plugin-aws-acm/commit/3df11a1dc5bb30241c8a0cede0a65c0a5f8a6c54))
+* **deps:** update aws-sdk-go-v2 monorepo ([#43](https://github.com/compliance-framework/plugin-aws-acm/issues/43)) ([6f9c484](https://github.com/compliance-framework/plugin-aws-acm/commit/6f9c48407585fd83a2da4b033c84cb2b50cfde52))
+* **deps:** update aws-sdk-go-v2 monorepo ([#45](https://github.com/compliance-framework/plugin-aws-acm/issues/45)) ([4095018](https://github.com/compliance-framework/plugin-aws-acm/commit/40950186d62032c16bd28fe58bcd15bd14189ddc))
+* **deps:** update aws-sdk-go-v2 monorepo ([#47](https://github.com/compliance-framework/plugin-aws-acm/issues/47)) ([4695eb3](https://github.com/compliance-framework/plugin-aws-acm/commit/4695eb31a549aa55d1427b57d2704c1c00674e4d))
+* **deps:** update go toolchain directive to v1.27.4 [security] ([#40](https://github.com/compliance-framework/plugin-aws-acm/issues/40)) ([f5be865](https://github.com/compliance-framework/plugin-aws-acm/commit/f5be8652f52329128734bb1480bea3d7f1af85a5))
+* **deps:** update module github.com/aws/aws-sdk-go-v2/config to v1.33.17 ([#44](https://github.com/compliance-framework/plugin-aws-acm/issues/44)) ([ab8c804](https://github.com/compliance-framework/plugin-aws-acm/commit/ab8c8048d2cb84bc55222cedb628b048e626c65c))
+* **deps:** update module github.com/aws/aws-sdk-go-v2/config to v1.33.19 ([#46](https://github.com/compliance-framework/plugin-aws-acm/issues/46)) ([3781440](https://github.com/compliance-framework/plugin-aws-acm/commit/3781440856dfa9e3e624f58c10385553d9c4d5ee))
+* **deps:** update module golang.org/x/crypto to v0.59.0 [security] ([#41](https://github.com/compliance-framework/plugin-aws-acm/issues/41)) ([d9ef3cf](https://github.com/compliance-framework/plugin-aws-acm/commit/d9ef3cfea745f306a9a2fa223a882aa567d45551))
+
 ## [0.1.3](https://github.com/compliance-framework/plugin-aws-acm/compare/v0.1.2...v0.1.3) (2026-11-02)
 
 
